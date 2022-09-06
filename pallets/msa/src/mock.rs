@@ -132,3 +132,7 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 
 	ext
 }
+
+/// A simple call, which one doesn't matter.
+pub const CALL: &<Test as frame_system::Config>::Call =
+	&Call::System(frame_system::Call::set_heap_pages { pages: 0u64 });
