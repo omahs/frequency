@@ -176,45 +176,4 @@ where
 }
 
 
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use crate::mock::{new_test_ext, Test, CALL};
-	use frame_support::{assert_noop, assert_ok};
 
-	#[test]	
-	fn signed_ext_check_nonce_works() {
-		new_test_ext().execute_with(|| {
-			frame_system::Account::<Test>::insert(
-				1,
-				frame_system::AccountInfo {
-					nonce: 1,
-					consumers: 0,
-					providers: 0,
-					sufficients: 0,
-					data: 0,
-				},
-			);
-			let info = DispatchInfo::default();
-			let len = 0_usize;
-			// stale
-			assert_noop!(
-				CheckNonce::<Test>(0).validate(&1, CALL, &info, len),
-				InvalidTransaction::Stale
-			);
-			assert_noop!(
-				CheckNonce::<Test>(0).pre_dispatch(&1, CALL, &info, len),
-				InvalidTransaction::Stale
-			);
-			// correct
-			assert_ok!(CheckNonce::<Test>(1).validate(&1, CALL, &info, len));
-			assert_ok!(CheckNonce::<Test>(1).pre_dispatch(&1, CALL, &info, len));
-			// future
-			assert_ok!(CheckNonce::<Test>(5).validate(&1, CALL, &info, len));
-			assert_noop!(
-				CheckNonce::<Test>(5).pre_dispatch(&1, CALL, &info, len),
-				InvalidTransaction::Future
-			);
-		})
-	}
-}

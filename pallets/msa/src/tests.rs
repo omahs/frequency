@@ -3,6 +3,7 @@ use crate::{
 	mock::*,
 	types::{AddKeyData, AddProvider, EMPTY_FUNCTION},
 	CheckFreeExtrinsicUse, Config, DispatchResult, Error, Event, MsaIdentifier,
+	extensions::check_nonce::CheckNonce,
 };
 use common_primitives::{
 	msa::{Delegator, KeyInfo, KeyInfoResponse, Provider, ProviderInfo},
@@ -13,7 +14,7 @@ use frame_support::{
 	weights::{DispatchInfo, GetDispatchInfo, Pays},
 };
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
-use sp_runtime::{traits::SignedExtension, MultiSignature};
+use sp_runtime::{traits::SignedExtension, MultiSignature, transaction_validity::InvalidTransaction};
 
 #[test]
 fn it_creates_an_msa_account() {
@@ -1227,3 +1228,39 @@ fn register_provider_duplicate() {
 		)
 	})
 }
+
+	#[test]	
+	fn signed_ext_check_nonce_works() {
+		new_test_ext().execute_with(|| {
+			frame_system::Account::<Test>::insert(
+				test_public(1),
+				frame_system::AccountInfo {
+					nonce: 1,
+					consumers: 0,
+					providers: 0,
+					sufficients: 0,
+					data: 0,
+				},
+			);
+			let info = DispatchInfo::default();
+			let len = 0_usize;
+			// stale
+			assert_noop!(
+				CheckNonce::<Test>(0).validate(&test_public(1), CALL, &info, len),
+				InvalidTransaction::Stale
+			);
+			assert_noop!(
+				CheckNonce::<Test>(0).pre_dispatch(&test_public(1), CALL, &info, len),
+				InvalidTransaction::Stale
+			);
+			// correct
+			assert_ok!(CheckNonce::<Test>(1).validate(&test_public(1), CALL, &info, len));
+			assert_ok!(CheckNonce::<Test>(1).pre_dispatch(&test_public(1), CALL, &info, len));
+			// future
+			assert_ok!(CheckNonce::<Test>(5).validate(&test_public(1), CALL, &info, len));
+			assert_noop!(
+				CheckNonce::<Test>(5).pre_dispatch(&test_public(1), CALL, &info, len),
+				InvalidTransaction::Future
+			);
+		})
+	}
