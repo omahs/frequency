@@ -17,7 +17,7 @@
 
 use crate::{Config, Pallet, Call};
 use codec::{Decode, Encode};
-use frame_support::weights::DispatchInfo;
+use frame_support::{traits::IsSubType, weights::DispatchInfo};
 use scale_info::TypeInfo;
 use common_primitives::msa::{
 	Delegator, Provider, MessageSourceId,
@@ -50,7 +50,7 @@ enum ValidityError {
 	InvalidMsaKey,
 }
 
-impl<T: Config + Send + Sync> CheckNonce<T> {
+impl<T: Config> CheckNonce<T> {
 	/// Validates the delegation by making sure that the MSA ids used are valid
 	pub fn validate_delegation_by_delegator(
 		account_id: &T::AccountId,
@@ -103,7 +103,7 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 
 impl<T: Config> SignedExtension for CheckNonce<T>
 where
-	T::Call: Dispatchable<Info = DispatchInfo>,
+	T::Call: Dispatchable<Info = DispatchInfo>  + IsSubType<Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type Call = T::Call;
@@ -138,7 +138,7 @@ where
 			Some(Call::delete_msa_key { key, .. }) =>
 			CheckNonce::<T>::validate_key_revocation(who, key),
 			_ => return Ok(Default::default()),
-		}
+		};
 		
 		account.nonce += T::Index::one();
 		frame_system::Account::<T>::insert(who, account);
