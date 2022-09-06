@@ -1,7 +1,7 @@
 use crate::{Config, Pallet, Call};
 use codec::{Decode, Encode};
 use common_primitives::msa::{
-	Delegator, Provider,
+	Delegator, Provider, MessageSourceId,
 };
 use frame_support::{traits::IsSubType, weights::DispatchInfo};
 
@@ -13,7 +13,7 @@ use sp_runtime::{
 	},
 };
 
-pub use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+pub use common_primitives::{utils::wrap_binary_data};
 
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
 /// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
