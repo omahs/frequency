@@ -79,10 +79,12 @@ where
 		_info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> Result<(), TransactionValidityError> {
+
 		let mut account = frame_system::Account::<T>::get(who);
 		// If the transaction nonce != the account nonce, return an error indicating the transaction is:
 		// Stale if it is less than the account nonce or
 		// Future if it is greater than the account nonce
+
 		if self.0 != account.nonce {
 			return Err(if self.0 < account.nonce {
 				InvalidTransaction::Stale
@@ -98,7 +100,7 @@ where
 			Some(Call::revoke_msa_delegation_by_delegator { .. }) => false,
 			_ => true,
 		};
-		
+
 		if allow_creation {
 			// Increment the account nonce by 1 and upsert it
 			account.nonce += T::Index::one();

@@ -1267,15 +1267,19 @@ fn register_provider_duplicate() {
 
 	#[test]
 	fn signed_ext_check_nonce_msa() {
-		let (key_pair, _) = sr25519::Pair::generate();
-		let new_key = key_pair.public();
+		new_test_ext().execute_with(|| {
 
-		let info = DispatchInfo::default();
-		let len = 0_usize;
+			let (key_pair, _) = sr25519::Pair::generate();
+			let new_key = key_pair.public();
 
-		let mcall: &<Test as frame_system::Config>::Call =
-		&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
+			let info = DispatchInfo::default();
+			let len = 0_usize;
 
-		assert_ok!(CheckNonce::<Test>(1).pre_dispatch(&test_public(1), mcall, &info, len));
+			let call_delete_msa_key: &<Test as frame_system::Config>::Call =
+			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
+
+			println!("***** signed_ext_check_nonce_msa()");
+			assert_ok!(CheckNonce::<Test>(0).pre_dispatch(&test_public(1), call_delete_msa_key, &info, len));
+		})
 
 	}
