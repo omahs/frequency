@@ -15,13 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{Config, Pallet, Call};
+use crate::{Config, Call};
 use codec::{Decode, Encode};
-use frame_support::{traits::IsSubType, weights::DispatchInfo};
+use frame_support::{traits::IsSubType,weights::DispatchInfo};
 use scale_info::TypeInfo;
-use common_primitives::msa::{
-	Delegator, Provider, MessageSourceId,
-};
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
 	transaction_validity::{
@@ -41,46 +38,6 @@ use sp_std::vec;
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Index);
-
-
-enum ValidityError {
-	/// Delegation to provider is not found or expired.
-	InvalidDelegation,
-	/// MSA key as been revoked.
-	InvalidMsaKey,
-}
-
-impl<T: Config> CheckNonce<T> {
-	/// Validates the delegation by making sure that the MSA ids used are valid
-	pub fn validate_delegation_by_delegator(
-		account_id: &T::AccountId,
-		provider_msa_id: &MessageSourceId,
-	) -> TransactionValidity {
-		const TAG_PREFIX: &str = "DelegationRevocation";
-		let delegator_msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(account_id)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.msa_id
-			.into();
-		let provider_msa_id = Provider(*provider_msa_id);
-
-		Pallet::<T>::ensure_valid_delegation(provider_msa_id, delegator_msa_id)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidDelegation as u8))?;
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
-	}
-
-	/// validates that a key being revoked is both valid and owned by a valid MSA account
-	pub fn validate_key_revocation(
-		account_id: &T::AccountId,
-		key: &T::AccountId,
-	) -> TransactionValidity {
-		const TAG_PREFIX: &str = "KeyRevocation";
-		let _msa_id: Delegator = Pallet::<T>::ensure_valid_msa_key(key)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.msa_id
-			.into();
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
-	}
-}
 
 impl<T: Config> CheckNonce<T> {
 	/// utility constructor. Used only in client/factory code.
@@ -103,7 +60,7 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 
 impl<T: Config> SignedExtension for CheckNonce<T>
 where
-	T::Call: Dispatchable<Info = DispatchInfo>  + IsSubType<Call<T>>,
+	T::Call: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type Call = T::Call;
@@ -123,6 +80,9 @@ where
 		_len: usize,
 	) -> Result<(), TransactionValidityError> {
 		let mut account = frame_system::Account::<T>::get(who);
+		// If the transaction nonce != the account nonce, return an error indicating the transaction is:
+		// Stale if it is less than the account nonce or
+		// Future if it is greater than the account nonce
 		if self.0 != account.nonce {
 			return Err(if self.0 < account.nonce {
 				InvalidTransaction::Stale
@@ -132,16 +92,18 @@ where
 			.into())
 		}
 
-		match _call.is_sub_type() {
-			Some(Call::revoke_msa_delegation_by_delegator { provider_msa_id, .. }) =>
-				CheckNonce::<T>::validate_delegation_by_delegator(who, &provider_msa_id),
-			Some(Call::delete_msa_key { key, .. }) =>
-			CheckNonce::<T>::validate_key_revocation(who, key),
-			_ => return Ok(Default::default()),
+		// If the extrinsic is delete_msa_key, or revoke_msa_delegation_by_delegator.
+		let allow_creation = match _call.is_sub_type() {
+			Some(Call::delete_msa_key { .. }) => false,
+			Some(Call::revoke_msa_delegation_by_delegator { .. }) => false,
+			_ => true,
 		};
 		
-		account.nonce += T::Index::one();
-		frame_system::Account::<T>::insert(who, account);
+		if allow_creation {
+			// Increment the account nonce by 1 and upsert it
+			account.nonce += T::Index::one();
+			frame_system::Account::<T>::insert(who, account);
+		}
 		Ok(())
 	}
 
@@ -152,12 +114,13 @@ where
 		_info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> TransactionValidity {
-		// check index
+		// check index (If the transaction nonce is less than the account nonce, the transaction is stale)
 		let account = frame_system::Account::<T>::get(who);
 		if self.0 < account.nonce {
 			return InvalidTransaction::Stale.into()
 		}
 
+		// SCALE encoding
 		let provides = vec![Encode::encode(&(who, self.0))];
 		let requires = if account.nonce < self.0 {
 			vec![Encode::encode(&(who, self.0 - One::one()))]
@@ -174,6 +137,4 @@ where
 		})
 	}
 }
-
-
 

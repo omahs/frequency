@@ -1264,3 +1264,18 @@ fn register_provider_duplicate() {
 			);
 		})
 	}
+
+	#[test]
+	fn signed_ext_check_nonce_msa() {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let new_key = key_pair.public();
+
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+
+		let mcall: &<Test as frame_system::Config>::Call =
+		&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
+
+		assert_ok!(CheckNonce::<Test>(1).pre_dispatch(&test_public(1), mcall, &info, len));
+
+	}
