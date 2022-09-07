@@ -1266,7 +1266,7 @@ fn register_provider_duplicate() {
 	}
 
 	#[test]
-	fn signed_ext_check_nonce_msa() {
+	fn signed_ext_check_nonce_delete_msa_key() {
 		new_test_ext().execute_with(|| {
 
 			let (key_pair, _) = sr25519::Pair::generate();
@@ -1279,6 +1279,21 @@ fn register_provider_duplicate() {
 			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
 
 			assert_ok!(CheckNonce::<Test>(0).pre_dispatch(&test_public(1), call_delete_msa_key, &info, len));
+		})
+
+	}
+
+	#[test]
+	fn signed_ext_check_nonce_revoke_msa_delegation_by_delegator() {
+		new_test_ext().execute_with(|| {
+			let (_, provider_msa_id) = test_create_delegator_msa_with_provider();
+			let call_revoke_msa_delegation_by_delegator: &<Test as frame_system::Config>::Call =
+				&Call::Msa(MsaCall::revoke_msa_delegation_by_delegator { provider_msa_id });
+
+			let info = DispatchInfo::default();
+			let len = 0_usize;
+
+			assert_ok!(CheckNonce::<Test>(0).pre_dispatch(&test_public(1), call_revoke_msa_delegation_by_delegator, &info, len));
 		})
 
 	}
