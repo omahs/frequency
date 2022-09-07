@@ -1278,7 +1278,6 @@ fn register_provider_duplicate() {
 			let call_delete_msa_key: &<Test as frame_system::Config>::Call =
 			&Call::Msa(MsaCall::delete_msa_key { key: AccountId32::from(new_key) });
 
-			println!("***** signed_ext_check_nonce_msa()");
 			assert_ok!(CheckNonce::<Test>(0).pre_dispatch(&test_public(1), call_delete_msa_key, &info, len));
 		})
 
