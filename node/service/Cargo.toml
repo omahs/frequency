@@ -23,6 +23,7 @@ frequency-runtime = { path = "../../runtime/frequency", optional = true }
 common-runtime = { path = "../../runtime/common" }
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
@@ -31,6 +32,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", features = [
   "wasmtime"
 ], branch = "polkadot-v0.9.33" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
+sc-client-db = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.33" }
 sc-executor = { git = "https://github.com/paritytech/substrate", features = [
