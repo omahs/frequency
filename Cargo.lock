@@ -2822,7 +2822,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "system-runtime-api",
 ]
 
 [[package]]
@@ -11247,19 +11246,6 @@ checksum = "a75fb188eb626b924683e3b95e3a48e63551fcfb51949de2f06a9d91dbee93c9"
 dependencies = [
  "core-foundation-sys",
  "libc",
-]
-
-[[package]]
-name = "system-runtime-api"
-version = "0.0.0"
-dependencies = [
- "common-primitives",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "sp-api",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
