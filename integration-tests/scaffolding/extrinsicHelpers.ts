@@ -91,8 +91,8 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         this.api = ExtrinsicHelper.api;
     }
 
-    public async signAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
-        return firstValueFrom(this.extrinsic().signAndSend(this.keys).pipe(
+    public async signAndSend(nonce?: number): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
+        return firstValueFrom(this.extrinsic().signAndSend(this.keys, { nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
